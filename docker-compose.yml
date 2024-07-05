@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: node_app
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=ayan@123
+      - DB_NAME=welcome_mail_db
+      - MINIO_END_POINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ROOT_USER=QpIog21OGEjL1sCXtoXt
+      - MINIO_ROOT_PASSWORD=xD2IQ21oEdl6kmDPO4HB1YdgpPZ45Go69WMxMjXz
+      - EMAIL_USER=official.ayan.ahmad@gmail.com
+      - EMAIL_PASS=bfxzdcbhhfgskyds  
+    volumes:
+      - .:/app
+    command: ["sh", "-c", "/wait-for-it.sh db 5432 -- node server.js"]
+
+  db:
+    image: postgres:13
+    container_name: postgres_db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ayan@123
+      POSTGRES_DB: welcome_mail_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ROOT_USER: QpIog21OGEjL1sCXtoXt
+      MINIO_ROOT_PASSWORD: xD2IQ21oEdl6kmDPO4HB1YdgpPZ45Go69WMxMjXz
+    command: server /data
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  db_data:
+  minio_data:
+
